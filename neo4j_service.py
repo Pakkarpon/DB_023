@@ -12,7 +12,7 @@ def _config() -> tuple[str, str, str, str]:
         cfg["uri"],
         cfg["username"],
         cfg["password"],
-        cfg.get("database", "ca18ca3e"),
+        cfg.get("database", "neo4j"),
     )
 
 
@@ -44,9 +44,9 @@ def ping() -> bool:
 
 def create_schema() -> None:
     statements = [
-        "CREATE CONSTRAINT student_id_unique IF NOT EXISTS FOR (s:Student) REQUIRE s.student_id IS UNIQUE",
-        "CREATE CONSTRAINT book_id_unique IF NOT EXISTS FOR (b:Book) REQUIRE b.book_id IS UNIQUE",
-        "CREATE CONSTRAINT author_id_unique IF NOT EXISTS FOR (a:Author) REQUIRE a.author_id IS UNIQUE",
+        "CREATE CONSTRAINT consumer_id_unique IF NOT EXISTS FOR (c:Consumer) REQUIRE c.consumer_id IS UNIQUE",
+        "CREATE CONSTRAINT snack_id_unique IF NOT EXISTS FOR (s:Snack) REQUIRE s.snack_id IS UNIQUE",
+        "CREATE CONSTRAINT brand_id_unique IF NOT EXISTS FOR (b:Brand) REQUIRE b.brand_id IS UNIQUE",
         "CREATE CONSTRAINT category_name_unique IF NOT EXISTS FOR (c:Category) REQUIRE c.name IS UNIQUE",
     ]
     for stmt in statements:
@@ -57,57 +57,65 @@ def seed_demo_data() -> None:
     """Idempotent sample dataset: safe to run more than once."""
     create_schema()
 
-    students = [
-        {"student_id": "S001", "name": "Anan", "major": "Computer Science", "year": 2},
-        {"student_id": "S002", "name": "Mali", "major": "Computer Science", "year": 2},
-        {"student_id": "S003", "name": "Krit", "major": "Information Technology", "year": 3},
-        {"student_id": "S004", "name": "Nida", "major": "Data Science", "year": 2},
-        {"student_id": "S005", "name": "Ploy", "major": "Business Computer", "year": 3},
-        {"student_id": "S006", "name": "Ton", "major": "Computer Science", "year": 1},
+    consumers = [
+        {"consumer_id": "C001", "name": "Aoy"},
+        {"consumer_id": "C002", "name": "Bee"},
+        {"consumer_id": "C003", "name": "Chai"},
+        {"consumer_id": "C004", "name": "Dew"},
+        {"consumer_id": "C005", "name": "Eve"},
+        {"consumer_id": "C006", "name": "Fay"},
+        {"consumer_id": "C007", "name": "Gao"},
+        {"consumer_id": "C008", "name": "Hao"},
+        {"consumer_id": "C009", "name": "Ivy"},
+        {"consumer_id": "C010", "name": "Jia"},
     ]
-    books = [
-        {"book_id": "B101", "title": "Python Programming", "year": 2025},
-        {"book_id": "B102", "title": "Artificial Intelligence Basics", "year": 2026},
-        {"book_id": "B103", "title": "Data Science for Students", "year": 2025},
-        {"book_id": "B104", "title": "Introduction to Database", "year": 2024},
-        {"book_id": "B105", "title": "Graph Databases with Neo4j", "year": 2026},
-        {"book_id": "B106", "title": "Machine Learning Foundations", "year": 2025},
-        {"book_id": "B107", "title": "Web Application Development", "year": 2024},
-        {"book_id": "B108", "title": "Algorithms and Problem Solving", "year": 2023},
+    
+    snacks = [
+        {"snack_id": "SNA101", "title": "Chocolate", "image_url": "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=300&q=80"},
+        {"snack_id": "SNA102", "title": "Chips", "image_url": "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=300&q=80"},
+        {"snack_id": "SNA103", "title": "Cookies", "image_url": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=300&q=80"},
+        {"snack_id": "SNA104", "title": "Gummy Bears", "image_url": "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=300&q=80"},
+        {"snack_id": "SNA105", "title": "Pretzels", "image_url": "https://images.unsplash.com/photo-1601689322253-125026955d3e?w=300&q=80"},
+        {"snack_id": "SNA106", "title": "Candy", "image_url": "https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=300&q=80"},
+        {"snack_id": "SNA107", "title": "Popcorn", "image_url": "https://images.unsplash.com/photo-1578849278619-e73505e9610f?w=300&q=80"},
+        {"snack_id": "SNA108", "title": "Crackers", "image_url": "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=300&q=80"},
+        {"snack_id": "SNA109", "title": "Fruit Bar", "image_url": "https://images.unsplash.com/photo-1622485600109-b1d624838612?w=300&q=80"},
+        {"snack_id": "SNA110", "title": "Nuts", "image_url": "https://images.unsplash.com/photo-1599598425947-330026e6d3c3?w=300&q=80"},
     ]
-    authors = [
-        {"author_id": "A01", "name": "Somchai Tech"},
-        {"author_id": "A02", "name": "Narin Data"},
-        {"author_id": "A03", "name": "Kanya AI"},
-        {"author_id": "A04", "name": "Preecha DB"},
+    
+    brands = [
+        {"brand_id": "BR01", "name": "SweetTooth Co."},
+        {"brand_id": "BR02", "name": "Salty Bites"},
+        {"brand_id": "BR03", "name": "Healthy Snacks Inc."},
     ]
-    categories = ["Programming", "AI", "Data Science", "Database", "Web Development", "Algorithms"]
+    
+    categories = ["Sweet", "Salty", "Healthy", "Chewy", "Crunchy"]
 
     query(
         """
         UNWIND $rows AS row
-        MERGE (s:Student {student_id: row.student_id})
-        SET s.name = row.name, s.major = row.major, s.year = row.year
+        MERGE (c:Consumer {consumer_id: row.consumer_id})
+        SET c.name = row.name
         """,
-        {"rows": students},
+        {"rows": consumers},
         write=True,
     )
     query(
         """
         UNWIND $rows AS row
-        MERGE (b:Book {book_id: row.book_id})
-        SET b.title = row.title, b.year = row.year
+        MERGE (s:Snack {snack_id: row.snack_id})
+        SET s.title = row.title, s.image_url = row.image_url
         """,
-        {"rows": books},
+        {"rows": snacks},
         write=True,
     )
     query(
         """
         UNWIND $rows AS row
-        MERGE (a:Author {author_id: row.author_id})
-        SET a.name = row.name
+        MERGE (b:Brand {brand_id: row.brand_id})
+        SET b.name = row.name
         """,
-        {"rows": authors},
+        {"rows": brands},
         write=True,
     )
     query(
@@ -117,182 +125,184 @@ def seed_demo_data() -> None:
     )
 
     friendships = [
-        ["S001", "S002"], ["S001", "S003"], ["S001", "S004"],
-        ["S002", "S005"], ["S003", "S004"], ["S004", "S006"],
+        ["C001", "C002"], ["C001", "C003"], ["C002", "C004"],
+        ["C003", "C005"], ["C004", "C006"], ["C005", "C007"],
+        ["C006", "C008"], ["C007", "C009"], ["C008", "C010"]
     ]
     query(
         """
         UNWIND $rows AS row
-        MATCH (a:Student {student_id: row[0]}), (b:Student {student_id: row[1]})
+        MATCH (a:Consumer {consumer_id: row[0]}), (b:Consumer {consumer_id: row[1]})
         MERGE (a)-[:FRIEND_OF]->(b)
         """,
         {"rows": friendships},
         write=True,
     )
 
-    borrows = [
-        {"s": "S001", "b": "B101", "date": "2026-08-01", "rating": 4.0},
-        {"s": "S001", "b": "B108", "date": "2026-08-14", "rating": 4.0},
-        {"s": "S002", "b": "B103", "date": "2026-08-05", "rating": 5.0},
-        {"s": "S002", "b": "B102", "date": "2026-08-18", "rating": 4.0},
-        {"s": "S003", "b": "B103", "date": "2026-08-07", "rating": 4.0},
-        {"s": "S003", "b": "B104", "date": "2026-08-20", "rating": 5.0},
-        {"s": "S004", "b": "B105", "date": "2026-08-09", "rating": 5.0},
-        {"s": "S004", "b": "B103", "date": "2026-08-24", "rating": 5.0},
-        {"s": "S005", "b": "B107", "date": "2026-08-11", "rating": 4.0},
-        {"s": "S006", "b": "B106", "date": "2026-08-12", "rating": 4.0},
+    purchases = [
+        {"c": "C001", "s": "SNA101", "date": "2026-10-01", "rating": 5.0},
+        {"c": "C001", "s": "SNA104", "date": "2026-10-02", "rating": 4.0},
+        {"c": "C002", "s": "SNA102", "date": "2026-10-03", "rating": 4.5},
+        {"c": "C003", "s": "SNA101", "date": "2026-10-04", "rating": 5.0},
+        {"c": "C004", "s": "SNA105", "date": "2026-10-05", "rating": 3.5},
+        {"c": "C005", "s": "SNA103", "date": "2026-10-06", "rating": 4.0},
+        {"c": "C006", "s": "SNA107", "date": "2026-10-07", "rating": 5.0},
+        {"c": "C007", "s": "SNA109", "date": "2026-10-08", "rating": 4.5},
+        {"c": "C008", "s": "SNA110", "date": "2026-10-09", "rating": 4.0},
+        {"c": "C009", "s": "SNA106", "date": "2026-10-10", "rating": 3.0},
     ]
     query(
         """
         UNWIND $rows AS row
-        MATCH (s:Student {student_id: row.s}), (b:Book {book_id: row.b})
-        MERGE (s)-[r:BORROWED]->(b)
-        SET r.borrow_date = date(row.date), r.rating = row.rating
+        MATCH (c:Consumer {consumer_id: row.c}), (s:Snack {snack_id: row.s})
+        MERGE (c)-[r:BOUGHT]->(s)
+        SET r.purchase_date = date(row.date), r.rating = row.rating
         """,
-        {"rows": borrows},
+        {"rows": purchases},
         write=True,
     )
 
     interests = [
-        ["S001", "Programming"], ["S001", "Database"],
-        ["S002", "AI"], ["S002", "Data Science"],
-        ["S003", "Database"], ["S003", "Data Science"],
-        ["S004", "AI"], ["S004", "Data Science"],
-        ["S005", "Web Development"], ["S006", "Programming"],
+        ["C001", "Sweet"], ["C002", "Salty"], ["C003", "Sweet"],
+        ["C004", "Salty"], ["C005", "Sweet"], ["C006", "Crunchy"],
+        ["C007", "Healthy"], ["C008", "Healthy"], ["C009", "Chewy"]
     ]
     query(
         """
         UNWIND $rows AS row
-        MATCH (s:Student {student_id: row[0]}), (c:Category {name: row[1]})
-        MERGE (s)-[:INTERESTED_IN]->(c)
+        MATCH (c:Consumer {consumer_id: row[0]}), (cat:Category {name: row[1]})
+        MERGE (c)-[:INTERESTED_IN]->(cat)
         """,
         {"rows": interests},
         write=True,
     )
 
-    book_categories = [
-        ["B101", "Programming"], ["B102", "AI"], ["B103", "Data Science"],
-        ["B104", "Database"], ["B105", "Database"], ["B106", "AI"],
-        ["B106", "Data Science"], ["B107", "Web Development"],
-        ["B108", "Algorithms"], ["B108", "Programming"],
+    snack_categories = [
+        ["SNA101", "Sweet"], ["SNA102", "Salty"], ["SNA102", "Crunchy"],
+        ["SNA103", "Sweet"], ["SNA104", "Sweet"], ["SNA104", "Chewy"],
+        ["SNA105", "Salty"], ["SNA105", "Crunchy"], ["SNA106", "Sweet"],
+        ["SNA106", "Chewy"], ["SNA107", "Salty"], ["SNA107", "Crunchy"],
+        ["SNA108", "Salty"], ["SNA109", "Healthy"], ["SNA109", "Chewy"],
+        ["SNA110", "Healthy"], ["SNA110", "Crunchy"]
     ]
     query(
         """
         UNWIND $rows AS row
-        MATCH (b:Book {book_id: row[0]}), (c:Category {name: row[1]})
-        MERGE (b)-[:IN_CATEGORY]->(c)
+        MATCH (s:Snack {snack_id: row[0]}), (cat:Category {name: row[1]})
+        MERGE (s)-[:IN_CATEGORY]->(cat)
         """,
-        {"rows": book_categories},
+        {"rows": snack_categories},
         write=True,
     )
 
-    wrote = [
-        ["A01", "B101"], ["A03", "B102"], ["A02", "B103"], ["A04", "B104"],
-        ["A04", "B105"], ["A03", "B106"], ["A01", "B107"], ["A01", "B108"],
+    produced = [
+        ["BR01", "SNA101"], ["BR01", "SNA103"], ["BR01", "SNA104"], ["BR01", "SNA106"],
+        ["BR02", "SNA102"], ["BR02", "SNA105"], ["BR02", "SNA107"], ["BR02", "SNA108"],
+        ["BR03", "SNA109"], ["BR03", "SNA110"]
     ]
     query(
         """
         UNWIND $rows AS row
-        MATCH (a:Author {author_id: row[0]}), (b:Book {book_id: row[1]})
-        MERGE (a)-[:WROTE]->(b)
+        MATCH (b:Brand {brand_id: row[0]}), (s:Snack {snack_id: row[1]})
+        MERGE (b)-[:PRODUCED]->(s)
         """,
-        {"rows": wrote},
+        {"rows": produced},
         write=True,
     )
 
 
-def get_students() -> list[dict[str, Any]]:
-    return query("MATCH (s:Student) RETURN s.student_id AS student_id, s.name AS name, s.major AS major, s.year AS year ORDER BY s.student_id")
+def get_consumers() -> list[dict[str, Any]]:
+    return query("MATCH (c:Consumer) RETURN c.consumer_id AS consumer_id, c.name AS name ORDER BY c.consumer_id")
 
 
 def get_dashboard_metrics() -> dict[str, int]:
     rows = query(
         """
-        MATCH (s:Student) WITH count(s) AS students
-        MATCH (b:Book) WITH students, count(b) AS books
-        MATCH ()-[r:BORROWED]->() WITH students, books, count(r) AS borrows
+        MATCH (c:Consumer) WITH count(c) AS consumers
+        MATCH (s:Snack) WITH consumers, count(s) AS snacks
+        MATCH ()-[r:BOUGHT]->() WITH consumers, snacks, count(r) AS purchases
         MATCH ()-[f:FRIEND_OF]->()
-        RETURN students, books, borrows, count(f) AS friendships
+        RETURN consumers, snacks, purchases, count(f) AS friendships
         """
     )
-    return rows[0] if rows else {"students": 0, "books": 0, "borrows": 0, "friendships": 0}
+    return rows[0] if rows else {"consumers": 0, "snacks": 0, "purchases": 0, "friendships": 0}
 
 
-def get_profile(student_id: str) -> dict[str, Any] | None:
+def get_profile(consumer_id: str) -> dict[str, Any] | None:
     rows = query(
         """
-        MATCH (s:Student {student_id:$student_id})
-        OPTIONAL MATCH (s)-[:INTERESTED_IN]->(c:Category)
-        OPTIONAL MATCH (s)-[:BORROWED]->(b:Book)
-        RETURN s.student_id AS student_id, s.name AS name, s.major AS major, s.year AS year,
-               collect(DISTINCT c.name) AS interests,
-               collect(DISTINCT {book_id:b.book_id, title:b.title}) AS borrowed
+        MATCH (c:Consumer {consumer_id:$consumer_id})
+        OPTIONAL MATCH (c)-[:INTERESTED_IN]->(cat:Category)
+        OPTIONAL MATCH (c)-[:BOUGHT]->(s:Snack)
+        RETURN c.consumer_id AS consumer_id, c.name AS name,
+               collect(DISTINCT cat.name) AS interests,
+               collect(DISTINCT {snack_id:s.snack_id, title:s.title}) AS purchased
         """,
-        {"student_id": student_id},
+        {"consumer_id": consumer_id},
     )
     if not rows:
         return None
     row = rows[0]
-    row["borrowed"] = [x for x in row["borrowed"] if x.get("book_id")]
+    row["purchased"] = [x for x in row["purchased"] if x.get("snack_id")]
     return row
 
 
-def recommend_books(student_id: str, limit: int = 8) -> list[dict[str, Any]]:
+def recommend_snacks(consumer_id: str, limit: int = 8) -> list[dict[str, Any]]:
     """Explainable hybrid score: social + interests + popularity + ratings."""
     return query(
         """
-        MATCH (u:Student {student_id:$student_id})
-        MATCH (b:Book)
-        WHERE NOT (u)-[:BORROWED]->(b)
+        MATCH (u:Consumer {consumer_id:$consumer_id})
+        MATCH (s:Snack)
+        WHERE NOT (u)-[:BOUGHT]->(s)
 
-        OPTIONAL MATCH (u)-[:FRIEND_OF]-(f:Student)-[:BORROWED]->(b)
-        WITH u, b, count(DISTINCT f) AS friend_count,
+        OPTIONAL MATCH (u)-[:FRIEND_OF]-(f:Consumer)-[:BOUGHT]->(s)
+        WITH u, s, count(DISTINCT f) AS friend_count,
              [x IN collect(DISTINCT f.name) WHERE x IS NOT NULL][0..3] AS friend_names
 
-        OPTIONAL MATCH (u)-[:INTERESTED_IN]->(c:Category)<-[:IN_CATEGORY]-(b)
-        WITH b, friend_count, friend_names,
+        OPTIONAL MATCH (u)-[:INTERESTED_IN]->(c:Category)<-[:IN_CATEGORY]-(s)
+        WITH s, friend_count, friend_names,
              count(DISTINCT c) AS interest_matches,
              [x IN collect(DISTINCT c.name) WHERE x IS NOT NULL] AS matched_categories
 
-        OPTIONAL MATCH (:Student)-[br:BORROWED]->(b)
-        WITH b, friend_count, friend_names, interest_matches, matched_categories,
+        OPTIONAL MATCH (:Consumer)-[br:BOUGHT]->(s)
+        WITH s, friend_count, friend_names, interest_matches, matched_categories,
              count(br) AS popularity,
              avg(br.rating) AS avg_rating
 
-        WITH b, friend_count, friend_names, interest_matches, matched_categories,
+        WITH s, friend_count, friend_names, interest_matches, matched_categories,
              popularity, coalesce(avg_rating, 0.0) AS avg_rating,
              (friend_count * 3.0) + (interest_matches * 2.0) +
              (popularity * 0.20) + (coalesce(avg_rating, 0.0) * 0.50) AS score
         WHERE friend_count > 0 OR interest_matches > 0 OR popularity > 0
 
-        OPTIONAL MATCH (a:Author)-[:WROTE]->(b)
-        OPTIONAL MATCH (b)-[:IN_CATEGORY]->(allc:Category)
-        RETURN b.book_id AS book_id, b.title AS title, b.year AS year,
-               collect(DISTINCT a.name) AS authors,
+        OPTIONAL MATCH (b:Brand)-[:PRODUCED]->(s)
+        OPTIONAL MATCH (s)-[:IN_CATEGORY]->(allc:Category)
+        RETURN s.snack_id AS snack_id, s.title AS title, s.image_url AS image_url,
+               collect(DISTINCT b.name) AS brands,
                collect(DISTINCT allc.name) AS categories,
                friend_count, friend_names, interest_matches, matched_categories,
                popularity, round(avg_rating * 100) / 100.0 AS avg_rating,
                round(score * 100) / 100.0 AS score
-        ORDER BY score DESC, b.title
+        ORDER BY score DESC, s.title
         LIMIT $limit
         """,
-        {"student_id": student_id, "limit": int(limit)},
+        {"consumer_id": consumer_id, "limit": int(limit)},
     )
 
 
-def search_books(keyword: str = "", category: str | None = None) -> list[dict[str, Any]]:
+def search_snacks(keyword: str = "", category: str | None = None) -> list[dict[str, Any]]:
     return query(
         """
-        MATCH (b:Book)
-        OPTIONAL MATCH (a:Author)-[:WROTE]->(b)
-        OPTIONAL MATCH (b)-[:IN_CATEGORY]->(c:Category)
-        WITH b, collect(DISTINCT a.name) AS authors, collect(DISTINCT c.name) AS categories
-        WHERE ($keyword = '' OR toLower(b.title) CONTAINS toLower($keyword)
-               OR any(x IN authors WHERE toLower(x) CONTAINS toLower($keyword)))
+        MATCH (s:Snack)
+        OPTIONAL MATCH (b:Brand)-[:PRODUCED]->(s)
+        OPTIONAL MATCH (s)-[:IN_CATEGORY]->(c:Category)
+        WITH s, collect(DISTINCT b.name) AS brands, collect(DISTINCT c.name) AS categories
+        WHERE ($keyword = '' OR toLower(s.title) CONTAINS toLower($keyword)
+               OR any(x IN brands WHERE toLower(x) CONTAINS toLower($keyword)))
           AND ($category = '' OR $category IN categories)
-        RETURN b.book_id AS book_id, b.title AS title, b.year AS year,
-               authors, categories
-        ORDER BY b.title
+        RETURN s.snack_id AS snack_id, s.title AS title, s.image_url AS image_url,
+               brands, categories
+        ORDER BY s.title
         """,
         {"keyword": keyword.strip(), "category": category or ""},
     )
@@ -302,34 +312,34 @@ def list_categories() -> list[str]:
     return [row["name"] for row in query("MATCH (c:Category) RETURN c.name AS name ORDER BY c.name")]
 
 
-def record_borrow(student_id: str, book_id: str, borrow_date: str, rating: float | None = None) -> None:
+def record_purchase(consumer_id: str, snack_id: str, purchase_date: str, rating: float | None = None) -> None:
     query(
         """
-        MATCH (s:Student {student_id:$student_id}), (b:Book {book_id:$book_id})
-        MERGE (s)-[r:BORROWED]->(b)
-        SET r.borrow_date = date($borrow_date)
+        MATCH (c:Consumer {consumer_id:$consumer_id}), (s:Snack {snack_id:$snack_id})
+        MERGE (c)-[r:BOUGHT]->(s)
+        SET r.purchase_date = date($purchase_date)
         FOREACH (_ IN CASE WHEN $rating IS NULL THEN [] ELSE [1] END | SET r.rating = $rating)
         """,
-        {"student_id": student_id, "book_id": book_id, "borrow_date": borrow_date, "rating": rating},
+        {"consumer_id": consumer_id, "snack_id": snack_id, "purchase_date": purchase_date, "rating": rating},
         write=True,
     )
 
 
-def graph_neighborhood(student_id: str, limit: int = 40) -> list[dict[str, Any]]:
+def graph_neighborhood(consumer_id: str, limit: int = 40) -> list[dict[str, Any]]:
     return query(
         """
-        MATCH (u:Student {student_id:$student_id})
-        OPTIONAL MATCH p=(u)-[:FRIEND_OF|BORROWED|INTERESTED_IN*1..2]-(x)
+        MATCH (u:Consumer {consumer_id:$consumer_id})
+        OPTIONAL MATCH p=(u)-[:FRIEND_OF|BOUGHT|INTERESTED_IN*1..2]-(x)
         WITH u, collect(p)[0..$limit] AS paths
         UNWIND paths AS p
         UNWIND relationships(p) AS r
-        WITH DISTINCT startNode(r) AS s, r, endNode(r) AS t
-        RETURN elementId(s) AS source_id, labels(s)[0] AS source_label,
-               coalesce(s.name, s.title, s.student_id, s.book_id) AS source_name,
+        WITH DISTINCT startNode(r) AS src, r, endNode(r) AS tgt
+        RETURN elementId(src) AS source_id, labels(src)[0] AS source_label,
+               coalesce(src.name, src.title, src.consumer_id, src.snack_id) AS source_name,
                type(r) AS relationship,
-               elementId(t) AS target_id, labels(t)[0] AS target_label,
-               coalesce(t.name, t.title, t.student_id, t.book_id) AS target_name
+               elementId(tgt) AS target_id, labels(tgt)[0] AS target_label,
+               coalesce(tgt.name, tgt.title, tgt.consumer_id, tgt.snack_id) AS target_name
         LIMIT $limit
         """,
-        {"student_id": student_id, "limit": int(limit)},
+        {"consumer_id": consumer_id, "limit": int(limit)},
     )
