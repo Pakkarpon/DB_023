@@ -343,3 +343,36 @@ def graph_neighborhood(consumer_id: str, limit: int = 40) -> list[dict[str, Any]
         """,
         {"consumer_id": consumer_id, "limit": int(limit)},
     )
+def add_new_snack(snack_id: str, title: str, image_url: str, brand_name: str, categories: list[str]) -> None:
+    # 1. สร้างโหนด Snack ใหม่ 
+    query(
+        "MERGE (s:Snack {snack_id: $snack_id}) SET s.title = $title, s.image_url = $image_url",
+        {"snack_id": snack_id, "title": title, "image_url": image_url},
+        write=True
+    )
+    
+    # 2. เชื่อมความสัมพันธ์กับ Brand (ถ้ามีการกรอกชื่อแบรนด์)
+    if brand_name.strip():
+        query(
+            """
+            MATCH (s:Snack {snack_id: $snack_id})
+            MERGE (b:Brand {name: $brand_name})
+            ON CREATE SET b.brand_id = 'BR_' + $snack_id
+            MERGE (b)-[:PRODUCED]->(s)
+            """,
+            {"snack_id": snack_id, "brand_name": brand_name.strip()},
+            write=True
+        )
+        
+    # 3. เชื่อมความสัมพันธ์กับ Categories
+    if categories:
+        query(
+            """
+            MATCH (s:Snack {snack_id: $snack_id})
+            UNWIND $categories AS cat_name
+            MERGE (c:Category {name: cat_name})
+            MERGE (s)-[:IN_CATEGORY]->(c)
+            """,
+            {"snack_id": snack_id, "categories": categories},
+            write=True
+        )
