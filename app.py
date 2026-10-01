@@ -105,7 +105,7 @@ with st.sidebar:
     if os.path.exists(profile_img):
         st.image(profile_img, use_container_width=True)
         
-    st.markdown("## 🍿 GraphSnack")
+    st.markdown("## 🍿 GraphSnack By Pakkarpon")
     st.caption("Neo4j Aura + Streamlit")
     
     st.markdown("", unsafe_allow_html=True)
