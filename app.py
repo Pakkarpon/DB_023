@@ -161,8 +161,14 @@ elif page == "Recommendations":
         brands = ", ".join(row.get("brands") or []) or "ไม่ระบุแบรนด์"
         categories = ", ".join(row.get("categories") or []) or "ไม่ระบุหมวด"
         
-        # ดึง URL รูปภาพ หรือใช้ภาพ Placeholder หากไม่มีข้อมูลภาพ
-        img_src = row.get("image_url", "https://via.placeholder.com/150?text=No+Image")
+        # จัดการอ่านไฟล์รูปภาพจากเครื่อง
+        img_path = row.get("image_url", "")
+        img_src = "https://via.placeholder.com/150?text=No+Image"
+        
+        if img_path and os.path.exists(img_path):
+            with open(img_path, "rb") as img_file:
+                b64_string = base64.b64encode(img_file.read()).decode()
+                img_src = f"data:image/jpeg;base64,{b64_string}"
         
         st.markdown(
             f"""
@@ -177,7 +183,7 @@ elif page == "Recommendations":
             </div>
             """,
             unsafe_allow_html=True,
-        )
+            )
 
 elif page == "Snack Search":
     st.subheader("🔎 ค้นหาขนม")
