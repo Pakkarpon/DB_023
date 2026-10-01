@@ -103,7 +103,7 @@ require_connection()
 with st.sidebar:
     profile_img = "images/Pakkarpon.jpg"
     if os.path.exists(profile_img):
-        st.image(profile_img, use_column_width=True)
+        st.image(profile_img, use_container_width=True)
         
     st.markdown("## 🍿 GraphSnack")
     st.caption("Neo4j Aura + Streamlit")
@@ -116,7 +116,6 @@ with st.sidebar:
     )
     st.divider()
     st.caption("Graph Database Recommendation System")
-
 
 
 st.markdown(
