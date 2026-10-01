@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import date
+import base64
+import os
 
 import pandas as pd
 import streamlit as st
@@ -183,7 +185,7 @@ elif page == "Recommendations":
             </div>
             """,
             unsafe_allow_html=True,
-            )
+        )
 
 elif page == "Snack Search":
     st.subheader("🔎 ค้นหาขนม")
