@@ -100,9 +100,16 @@ def explain_reason(row: dict) -> str:
 
 require_connection()
 
-with st.sidebar:   
+with st.sidebar:
+    profile_img = "images/Pakkarpon.jpg"
+    if os.path.exists(profile_img):
+        st.image(profile_img, use_column_width=True)
+        
     st.markdown("## 🍿 GraphSnack")
     st.caption("Neo4j Aura + Streamlit")
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
     page = st.radio(
         "เมนู",
         ["Dashboard", "Recommendations", "Snack Search", "Purchase / Rate", "Graph Explorer", "Admin / Setup"],
