@@ -108,7 +108,7 @@ with st.sidebar:
     st.markdown("## 🍿 GraphSnack")
     st.caption("Neo4j Aura + Streamlit")
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("", unsafe_allow_html=True)
     
     page = st.radio(
         "เมนู",
