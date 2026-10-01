@@ -71,16 +71,16 @@ def seed_demo_data() -> None:
     ]
     
     snacks = [
-        {"snack_id": "SNA101", "title": "Chocolate", "image_url": "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=300&q=80"},
-        {"snack_id": "SNA102", "title": "Chips", "image_url": "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=300&q=80"},
-        {"snack_id": "SNA103", "title": "Cookies", "image_url": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=300&q=80"},
-        {"snack_id": "SNA104", "title": "Gummy Bears", "image_url": "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=300&q=80"},
-        {"snack_id": "SNA105", "title": "Pretzels", "image_url": "https://images.unsplash.com/photo-1601689322253-125026955d3e?w=300&q=80"},
-        {"snack_id": "SNA106", "title": "Candy", "image_url": "https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=300&q=80"},
-        {"snack_id": "SNA107", "title": "Popcorn", "image_url": "https://images.unsplash.com/photo-1578849278619-e73505e9610f?w=300&q=80"},
-        {"snack_id": "SNA108", "title": "Crackers", "image_url": "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=300&q=80"},
-        {"snack_id": "SNA109", "title": "Fruit Bar", "image_url": "https://images.unsplash.com/photo-1622485600109-b1d624838612?w=300&q=80"},
-        {"snack_id": "SNA110", "title": "Nuts", "image_url": "https://images.unsplash.com/photo-1599598425947-330026e6d3c3?w=300&q=80"},
+        {"snack_id": "SNA101", "title": "Chocolate", "image_url": "images/Chocolate.jpg"},
+        {"snack_id": "SNA102", "title": "Chips", "image_url": "images/Chips.jpg"},
+        {"snack_id": "SNA103", "title": "Cookies", "image_url": "images/Cookies.jpg"},
+        {"snack_id": "SNA104", "title": "Gummy Bears", "image_url": "images/Gummy Bears.jpg"},
+        {"snack_id": "SNA105", "title": "Pretzels", "image_url": "images/Pretzels.jpg"},
+        {"snack_id": "SNA106", "title": "Candy", "image_url": "images/Candy.jpg"},
+        {"snack_id": "SNA107", "title": "Popcorn", "image_url": "images/Popcorn.jpg"},
+        {"snack_id": "SNA108", "title": "Crackers", "image_url": "images/Crackers.jpg"},
+        {"snack_id": "SNA109", "title": "Fruit Bar", "image_url": "images/Fruit Bar.jpg"},
+        {"snack_id": "SNA110", "title": "Nuts", "image_url": "images/Nuts.jpg"},
     ]
     
     brands = [
