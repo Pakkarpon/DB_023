@@ -102,9 +102,9 @@ def explain_reason(row: dict) -> str:
 require_connection()
 
 with st.sidebar:
-    profile_img = "images/Pakkarpon.jpg"
-    if os.path.exists(profile_img):
-        st.image(profile_img, use_container_width=True)
+    //profile_img = "images/Pakkarpon.jpg"
+    //if os.path.exists(profile_img):
+        //st.image(profile_img, use_container_width=True)
         
     st.markdown("## 🍿 GraphSnack By Pakkarpon")
     st.caption("Neo4j Aura + Streamlit")
