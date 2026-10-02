@@ -1,23 +1,24 @@
-# รวมการบ้าน — 664245008
+# รวมการบ้าน — 664245023
 
-เทพทัต ทับทิมไทร
-Steam URL: https://gamerecomendationweb-wppvzoq3aub23d9ywceiwy.streamlit.app/
+Streamlit URL: https://22apezkshfcnklimdursax.streamlit.app/
 
-รวมการบ้านทั้ง 4 ไฟล์ที่แนบมา พร้อมไฟล์ประกอบโปรเจกต์แนะนำเกม
+รวมการบ้าน พร้อมไฟล์ประกอบโปรเจกต์ระบบแนะนำขนม (GraphSnack Recommendation System)
 
-[หน้า index](index.html) · [Repository](https://github.com/YokMiracle/Motorcycle)
+[Repository](https://github.com/)
 
-| งาน | การบ้าน | ไฟล์ | Colab |
+| งาน | การบ้าน | ไฟล์/เว็บไซต์ | Colab |
 | --- | --- | --- | --- |
-| 01 | แบบฝึกหัด School Book Recommendation Neo4j | [เปิดไฟล์](Homework/664245012_SchoolBookRecommendation.pdf) | — |
-| 02 | Game Recommendation ด้วย Graph | [เปิดไฟล์](Homework/664245012_Game_Recommender_System_ด้วย_Graph.ipynb) | [เปิด Colab](https://colab.research.google.com/drive/1LL7W9yYA3Zo3ubv2BuDOKFjHsyOdNvMx?usp=sharing) |
-| 03 | GameRecommend ด้วย Neo4j | [เปิดไฟล์](Homework/Neo4jGameRecommendation.ipynb) | [เปิด Colab](https://colab.research.google.com/drive/1VJOWWZiiEPm0LqGX5_erVHdwnF468VEI?usp=sharing) | 
-| 04 | Slide Game Recommendation  | [เปิดไฟล์](Homework/664245012GameRecommend.pptx) | — | 
+| 01 | แบบฝึกหัด Graph Analysis (Neo4jDBOnline) | — | [เปิด Colab](https://colab.research.google.com/drive/1sAQqauHYCRtjK1jVGrsGJD0Wky-hiM8B?authuser=2&usp=drive_open) |
+| 02 | ระบบแนะนำเบื้องต้น (DessertRecommender) | — | [เปิด Colab](https://colab.research.google.com/drive/1psVQlujQ0JD0iQekz-8qHTas4n-Dp3Vz?authuser=2&usp=drive_open) |
+| 03 | Web Application ระบบแนะนำขนม (GraphSnack) | [เข้าสู่เว็บไซต์](https://22apezkshfcnklimdursax.streamlit.app/) | — | 
+| 04 | ตอบคำถามแบบฝึกหัด  | [เปิด Canva](https://canva.link/nok1viq7c02b7vv) | — | 
+| 05 | Slide Presentation (GraphSnack) | [เปิด Canva](https://canva.link/ybigmgpg3xsykij) | — |
 
+---
 
-# GraphBook Recommendation System
+# 🍿 GraphSnack Recommendation System (ระบบแนะนำขนม)
 
-โปรเจ็คตัวอย่างระดับปริญญาตรีสำหรับรายวิชา Graph Database / Advanced Database
+โปรเจกต์ระบบแนะนำขนมด้วย Graph Database 
 พัฒนาด้วย **Streamlit + Neo4j Aura + Cypher** และออกแบบให้ deploy ผ่าน **GitHub → Streamlit Community Cloud** ได้โดยตรง
 
 ## 1. แนวคิดของระบบ
@@ -25,18 +26,17 @@ Steam URL: https://gamerecomendationweb-wppvzoq3aub23d9ywceiwy.streamlit.app/
 ระบบใช้ Property Graph ดังนี้
 
 ```text
-(Student)-[:FRIEND_OF]-(Student)
-(Student)-[:BORROWED {borrow_date, rating}]->(Book)
-(Student)-[:INTERESTED_IN]->(Category)
-(Book)-[:IN_CATEGORY]->(Category)
-(Author)-[:WROTE]->(Book)
-```
+(Consumer)-[:FRIEND_OF]-(Consumer)
+(Consumer)-[:BOUGHT {purchase_date, rating}]->(Snack)
+(Consumer)-[:INTERESTED_IN]->(Category)
+(Snack)-[:IN_CATEGORY]->(Category)
+(Brand)-[:PRODUCED]->(Snack)
 
-จุดเด่นคือคำแนะนำอธิบายได้ (Explainable Recommendation) ว่าหนังสือถูกแนะนำเพราะ
-1. เพื่อนของผู้ใช้เคยยืม
-2. หมวดหนังสือตรงกับความสนใจ
-3. หนังสือได้รับความนิยม
-4. หนังสือมีคะแนนเฉลี่ยดี
+จุดเด่นคือคำแนะนำอธิบายได้ (Explainable Recommendation) พร้อมแสดงภาพประกอบ ว่าขนมถูกแนะนำเพราะ
+1. เพื่อนของผู้ใช้เคยซื้อ
+2. หมวดหมู่ขนมตรงกับความสนใจ
+3. ขนมได้รับความนิยม
+4. ขนมมีคะแนนเฉลี่ยรีวิวดี
 
 ตัวอย่างคะแนน Hybrid:
 
@@ -52,15 +52,15 @@ score = friend_count*3
 ## 2. โครงสร้างไฟล์
 
 ```text
-book_graph_recommender/
-├── app.py
-├── neo4j_service.py
-├── requirements.txt
+graphsnack_recommender/
+├── app.py                 
+├── neo4j_service.py        
+├── requirements.txt        
+├── images/
 ├── .gitignore
 ├── .streamlit/
 │   └── secrets.toml.example
-└── cypher/
-    └── schema.cypher
+└── README.md 
 ```
 
 ## 3. สร้าง Neo4j Aura
@@ -135,16 +135,9 @@ database = "neo4j"
 
 ## 8. สิ่งที่ปรับปรุงจาก notebook ต้นแบบ
 
-- ใช้ label `Student` ให้สอดคล้องทั้งระบบ แทนการปะปน `Student2`/`Student`
-- ใช้ `MERGE` ใน seed data เพื่อรองรับการรันซ้ำ
+- ปรับบริบทเป็นระบบแนะนำขนม (Consumer / Snack)
+- เพิ่มการแสดงผลรูปภาพขนมในหน้า Recommendations
+- เพิ่มฟีเจอร์ Add Snack สำหรับการเพิ่มข้อมูลขนมและแบรนด์ลงฐานข้อมูล
+- ใช้ MERGE ใน seed data เพื่อรองรับการรันซ้ำ
 - เพิ่ม Unique Constraints
-- ใช้ parameterized Cypher แทนการต่อ string จาก input
-- มอง `FRIEND_OF` เป็นความสัมพันธ์เชิงสมมาตรตอน query ด้วย `-[:FRIEND_OF]-`
-- เพิ่ม Author, Category และ Interest เพื่อให้ recommendation มีมิติด้าน content
-- เพิ่ม rating และ popularity เพื่อสร้าง Hybrid Score
-- แยก database layer (`neo4j_service.py`) ออกจาก UI (`app.py`)
-- ใช้ Streamlit Secrets แทนการ hardcode Aura credential
-
-## 9. แนวทางต่อยอดเป็นโครงงานนักศึกษา
-
-สามารถเพิ่ม Login, Favorite/Wishlist, การคืนหนังสือ, due date, collaborative filtering, Graph Data Science similarity, PageRank, community detection, evaluation metrics เช่น Precision@K/Recall@K และระบบผู้ดูแลได้
+- แยก database layer (neo4j_service.py) ออกจาก UI (app.py)
