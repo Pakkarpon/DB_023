@@ -1,378 +1,285 @@
 from __future__ import annotations
 
-from typing import Any
+import base64
+import os
+from datetime import date
 
+import pandas as pd
 import streamlit as st
-from neo4j import GraphDatabase, RoutingControl
+
+# สมมติว่ามีการแก้ไขชื่อฟังก์ชันในไฟล์ neo4j_service.py ให้สอดคล้องกับบริบทใหม่แล้ว
+from neo4j_service import (
+    get_dashboard_metrics,
+    get_profile,
+    get_consumers,
+    graph_neighborhood,
+    list_categories,
+    ping,
+    recommend_snacks,
+    record_purchase,
+    search_snacks,
+    seed_demo_data,
+    add_new_snack, # นำเข้าฟังก์ชันเพิ่มขนม
+)
+
+st.set_page_config(
+    page_title="GraphSnack Recommender",
+    page_icon="🍿",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
+    <style>
+      .block-container {padding-top: 1.3rem; padding-bottom: 2rem;}
+      .hero {
+        padding: 1.4rem 1.6rem; border-radius: 22px;
+        background: linear-gradient(120deg, #111827 0%, #1f2937 55%, #b45309 100%);
+        color: white; margin-bottom: 1rem;
+      }
+      .hero h1 {margin:0; font-size:2.15rem;}
+      .hero p {opacity:.88; margin:.35rem 0 0 0;}
+      .snack-card {
+        padding: 1rem 1.1rem; border: 1px solid rgba(128,128,128,.25);
+        border-radius: 16px; margin-bottom: .75rem; display: flex; align-items: flex-start;
+      }
+      .snack-image {
+        width: 100px; height: auto; border-radius: 8px; margin-right: 15px; object-fit: cover;
+      }
+      .score-pill {
+        display:inline-block; padding:.2rem .55rem; border-radius:999px;
+        background:#b45309; color:white; font-size:.8rem; font-weight:700;
+      }
+      .muted {opacity:.72; font-size:.9rem;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
-def _config() -> tuple[str, str, str, str]:
-    cfg = st.secrets["neo4j"]
-    return (
-        cfg["uri"],
-        cfg["username"],
-        cfg["password"],
-        cfg.get("database", "neo4j"),
-    )
-
-
-@st.cache_resource(show_spinner=False)
-def get_driver():
-    """Create one thread-safe Neo4j Driver for the Streamlit process."""
-    uri, username, password, _ = _config()
-    driver = GraphDatabase.driver(uri, auth=(username, password))
-    driver.verify_connectivity()
-    return driver
-
-
-def query(cypher: str, parameters: dict[str, Any] | None = None, *, write: bool = False) -> list[dict[str, Any]]:
-    """Execute parameterized Cypher and return rows as dictionaries."""
-    _, _, _, database = _config()
-    records, _, _ = get_driver().execute_query(
-        cypher,
-        parameters_=parameters or {},
-        database_=database,
-        routing_=RoutingControl.WRITE if write else RoutingControl.READ,
-    )
-    return [record.data() for record in records]
-
-
-def ping() -> bool:
-    rows = query("RETURN 1 AS ok")
-    return bool(rows and rows[0]["ok"] == 1)
-
-
-def create_schema() -> None:
-    statements = [
-        "CREATE CONSTRAINT consumer_id_unique IF NOT EXISTS FOR (c:Consumer) REQUIRE c.consumer_id IS UNIQUE",
-        "CREATE CONSTRAINT snack_id_unique IF NOT EXISTS FOR (s:Snack) REQUIRE s.snack_id IS UNIQUE",
-        "CREATE CONSTRAINT brand_id_unique IF NOT EXISTS FOR (b:Brand) REQUIRE b.brand_id IS UNIQUE",
-        "CREATE CONSTRAINT category_name_unique IF NOT EXISTS FOR (c:Category) REQUIRE c.name IS UNIQUE",
-    ]
-    for stmt in statements:
-        query(stmt, write=True)
-
-
-def seed_demo_data() -> None:
-    """Idempotent sample dataset: safe to run more than once."""
-    create_schema()
-
-    consumers = [
-        {"consumer_id": "C001", "name": "Aoy"},
-        {"consumer_id": "C002", "name": "Bee"},
-        {"consumer_id": "C003", "name": "Chai"},
-        {"consumer_id": "C004", "name": "Dew"},
-        {"consumer_id": "C005", "name": "Eve"},
-        {"consumer_id": "C006", "name": "Fay"},
-        {"consumer_id": "C007", "name": "Gao"},
-        {"consumer_id": "C008", "name": "Hao"},
-        {"consumer_id": "C009", "name": "Ivy"},
-        {"consumer_id": "C010", "name": "Jia"},
-    ]
-    
-    snacks = [
-        {"snack_id": "SNA101", "title": "Chocolate", "image_url": "images/Chocolate.jpg"},
-        {"snack_id": "SNA102", "title": "Chips", "image_url": "images/Chips.jpg"},
-        {"snack_id": "SNA103", "title": "Cookies", "image_url": "images/Cookies.jpg"},
-        {"snack_id": "SNA104", "title": "Gummy Bears", "image_url": "images/Gummy Bears.jpg"},
-        {"snack_id": "SNA105", "title": "Pretzels", "image_url": "images/Pretzels.jpg"},
-        {"snack_id": "SNA106", "title": "Candy", "image_url": "images/Candy.jpg"},
-        {"snack_id": "SNA107", "title": "Popcorn", "image_url": "images/Popcorn.jpg"},
-        {"snack_id": "SNA108", "title": "Crackers", "image_url": "images/Crackers.jpg"},
-        {"snack_id": "SNA109", "title": "Fruit Bar", "image_url": "images/Fruit Bar.jpg"},
-        {"snack_id": "SNA110", "title": "Nuts", "image_url": "images/Nuts.jpg"},
-    ]
-    
-    brands = [
-        {"brand_id": "BR01", "name": "SweetTooth Co."},
-        {"brand_id": "BR02", "name": "Salty Bites"},
-        {"brand_id": "BR03", "name": "Healthy Snacks Inc."},
-    ]
-    
-    categories = ["Sweet", "Salty", "Healthy", "Chewy", "Crunchy"]
-
-    query(
-        """
-        UNWIND $rows AS row
-        MERGE (c:Consumer {consumer_id: row.consumer_id})
-        SET c.name = row.name
-        """,
-        {"rows": consumers},
-        write=True,
-    )
-    query(
-        """
-        UNWIND $rows AS row
-        MERGE (s:Snack {snack_id: row.snack_id})
-        SET s.title = row.title, s.image_url = row.image_url
-        """,
-        {"rows": snacks},
-        write=True,
-    )
-    query(
-        """
-        UNWIND $rows AS row
-        MERGE (b:Brand {brand_id: row.brand_id})
-        SET b.name = row.name
-        """,
-        {"rows": brands},
-        write=True,
-    )
-    query(
-        "UNWIND $rows AS name MERGE (:Category {name:name})",
-        {"rows": categories},
-        write=True,
-    )
-
-    friendships = [
-        ["C001", "C002"], ["C001", "C003"], ["C002", "C004"],
-        ["C003", "C005"], ["C004", "C006"], ["C005", "C007"],
-        ["C006", "C008"], ["C007", "C009"], ["C008", "C010"]
-    ]
-    query(
-        """
-        UNWIND $rows AS row
-        MATCH (a:Consumer {consumer_id: row[0]}), (b:Consumer {consumer_id: row[1]})
-        MERGE (a)-[:FRIEND_OF]->(b)
-        """,
-        {"rows": friendships},
-        write=True,
-    )
-
-    purchases = [
-        {"c": "C001", "s": "SNA101", "date": "2026-10-01", "rating": 5.0},
-        {"c": "C001", "s": "SNA104", "date": "2026-10-02", "rating": 4.0},
-        {"c": "C002", "s": "SNA102", "date": "2026-10-03", "rating": 4.5},
-        {"c": "C003", "s": "SNA101", "date": "2026-10-04", "rating": 5.0},
-        {"c": "C004", "s": "SNA105", "date": "2026-10-05", "rating": 3.5},
-        {"c": "C005", "s": "SNA103", "date": "2026-10-06", "rating": 4.0},
-        {"c": "C006", "s": "SNA107", "date": "2026-10-07", "rating": 5.0},
-        {"c": "C007", "s": "SNA109", "date": "2026-10-08", "rating": 4.5},
-        {"c": "C008", "s": "SNA110", "date": "2026-10-09", "rating": 4.0},
-        {"c": "C009", "s": "SNA106", "date": "2026-10-10", "rating": 3.0},
-    ]
-    query(
-        """
-        UNWIND $rows AS row
-        MATCH (c:Consumer {consumer_id: row.c}), (s:Snack {snack_id: row.s})
-        MERGE (c)-[r:BOUGHT]->(s)
-        SET r.purchase_date = date(row.date), r.rating = row.rating
-        """,
-        {"rows": purchases},
-        write=True,
-    )
-
-    interests = [
-        ["C001", "Sweet"], ["C002", "Salty"], ["C003", "Sweet"],
-        ["C004", "Salty"], ["C005", "Sweet"], ["C006", "Crunchy"],
-        ["C007", "Healthy"], ["C008", "Healthy"], ["C009", "Chewy"]
-    ]
-    query(
-        """
-        UNWIND $rows AS row
-        MATCH (c:Consumer {consumer_id: row[0]}), (cat:Category {name: row[1]})
-        MERGE (c)-[:INTERESTED_IN]->(cat)
-        """,
-        {"rows": interests},
-        write=True,
-    )
-
-    snack_categories = [
-        ["SNA101", "Sweet"], ["SNA102", "Salty"], ["SNA102", "Crunchy"],
-        ["SNA103", "Sweet"], ["SNA104", "Sweet"], ["SNA104", "Chewy"],
-        ["SNA105", "Salty"], ["SNA105", "Crunchy"], ["SNA106", "Sweet"],
-        ["SNA106", "Chewy"], ["SNA107", "Salty"], ["SNA107", "Crunchy"],
-        ["SNA108", "Salty"], ["SNA109", "Healthy"], ["SNA109", "Chewy"],
-        ["SNA110", "Healthy"], ["SNA110", "Crunchy"]
-    ]
-    query(
-        """
-        UNWIND $rows AS row
-        MATCH (s:Snack {snack_id: row[0]}), (cat:Category {name: row[1]})
-        MERGE (s)-[:IN_CATEGORY]->(cat)
-        """,
-        {"rows": snack_categories},
-        write=True,
-    )
-
-    produced = [
-        ["BR01", "SNA101"], ["BR01", "SNA103"], ["BR01", "SNA104"], ["BR01", "SNA106"],
-        ["BR02", "SNA102"], ["BR02", "SNA105"], ["BR02", "SNA107"], ["BR02", "SNA108"],
-        ["BR03", "SNA109"], ["BR03", "SNA110"]
-    ]
-    query(
-        """
-        UNWIND $rows AS row
-        MATCH (b:Brand {brand_id: row[0]}), (s:Snack {snack_id: row[1]})
-        MERGE (b)-[:PRODUCED]->(s)
-        """,
-        {"rows": produced},
-        write=True,
-    )
-
-
-def get_consumers() -> list[dict[str, Any]]:
-    return query("MATCH (c:Consumer) RETURN c.consumer_id AS consumer_id, c.name AS name ORDER BY c.consumer_id")
-
-
-def get_dashboard_metrics() -> dict[str, int]:
-    rows = query(
-        """
-        MATCH (c:Consumer) WITH count(c) AS consumers
-        MATCH (s:Snack) WITH consumers, count(s) AS snacks
-        MATCH ()-[r:BOUGHT]->() WITH consumers, snacks, count(r) AS purchases
-        MATCH ()-[f:FRIEND_OF]->()
-        RETURN consumers, snacks, purchases, count(f) AS friendships
-        """
-    )
-    return rows[0] if rows else {"consumers": 0, "snacks": 0, "purchases": 0, "friendships": 0}
-
-
-def get_profile(consumer_id: str) -> dict[str, Any] | None:
-    rows = query(
-        """
-        MATCH (c:Consumer {consumer_id:$consumer_id})
-        OPTIONAL MATCH (c)-[:INTERESTED_IN]->(cat:Category)
-        OPTIONAL MATCH (c)-[:BOUGHT]->(s:Snack)
-        RETURN c.consumer_id AS consumer_id, c.name AS name,
-               collect(DISTINCT cat.name) AS interests,
-               collect(DISTINCT {snack_id:s.snack_id, title:s.title}) AS purchased
-        """,
-        {"consumer_id": consumer_id},
-    )
-    if not rows:
-        return None
-    row = rows[0]
-    row["purchased"] = [x for x in row["purchased"] if x.get("snack_id")]
-    return row
-
-
-def recommend_snacks(consumer_id: str, limit: int = 8) -> list[dict[str, Any]]:
-    """Explainable hybrid score: social + interests + popularity + ratings."""
-    return query(
-        """
-        MATCH (u:Consumer {consumer_id:$consumer_id})
-        MATCH (s:Snack)
-        WHERE NOT (u)-[:BOUGHT]->(s)
-
-        OPTIONAL MATCH (u)-[:FRIEND_OF]-(f:Consumer)-[:BOUGHT]->(s)
-        WITH u, s, count(DISTINCT f) AS friend_count,
-             [x IN collect(DISTINCT f.name) WHERE x IS NOT NULL][0..3] AS friend_names
-
-        OPTIONAL MATCH (u)-[:INTERESTED_IN]->(c:Category)<-[:IN_CATEGORY]-(s)
-        WITH s, friend_count, friend_names,
-             count(DISTINCT c) AS interest_matches,
-             [x IN collect(DISTINCT c.name) WHERE x IS NOT NULL] AS matched_categories
-
-        OPTIONAL MATCH (:Consumer)-[br:BOUGHT]->(s)
-        WITH s, friend_count, friend_names, interest_matches, matched_categories,
-             count(br) AS popularity,
-             avg(br.rating) AS avg_rating
-
-        WITH s, friend_count, friend_names, interest_matches, matched_categories,
-             popularity, coalesce(avg_rating, 0.0) AS avg_rating,
-             (friend_count * 3.0) + (interest_matches * 2.0) +
-             (popularity * 0.20) + (coalesce(avg_rating, 0.0) * 0.50) AS score
-        WHERE friend_count > 0 OR interest_matches > 0 OR popularity > 0
-
-        OPTIONAL MATCH (b:Brand)-[:PRODUCED]->(s)
-        OPTIONAL MATCH (s)-[:IN_CATEGORY]->(allc:Category)
-        RETURN s.snack_id AS snack_id, s.title AS title, s.image_url AS image_url,
-               collect(DISTINCT b.name) AS brands,
-               collect(DISTINCT allc.name) AS categories,
-               friend_count, friend_names, interest_matches, matched_categories,
-               popularity, round(avg_rating * 100) / 100.0 AS avg_rating,
-               round(score * 100) / 100.0 AS score
-        ORDER BY score DESC, s.title
-        LIMIT $limit
-        """,
-        {"consumer_id": consumer_id, "limit": int(limit)},
-    )
-
-
-def search_snacks(keyword: str = "", category: str | None = None) -> list[dict[str, Any]]:
-    return query(
-        """
-        MATCH (s:Snack)
-        OPTIONAL MATCH (b:Brand)-[:PRODUCED]->(s)
-        OPTIONAL MATCH (s)-[:IN_CATEGORY]->(c:Category)
-        WITH s, collect(DISTINCT b.name) AS brands, collect(DISTINCT c.name) AS categories
-        WHERE ($keyword = '' OR toLower(s.title) CONTAINS toLower($keyword)
-               OR any(x IN brands WHERE toLower(x) CONTAINS toLower($keyword)))
-          AND ($category = '' OR $category IN categories)
-        RETURN s.snack_id AS snack_id, s.title AS title, s.image_url AS image_url,
-               brands, categories
-        ORDER BY s.title
-        """,
-        {"keyword": keyword.strip(), "category": category or ""},
-    )
-
-
-def list_categories() -> list[str]:
-    return [row["name"] for row in query("MATCH (c:Category) RETURN c.name AS name ORDER BY c.name")]
-
-
-def record_purchase(consumer_id: str, snack_id: str, purchase_date: str, rating: float | None = None) -> None:
-    query(
-        """
-        MATCH (c:Consumer {consumer_id:$consumer_id}), (s:Snack {snack_id:$snack_id})
-        MERGE (c)-[r:BOUGHT]->(s)
-        SET r.purchase_date = date($purchase_date)
-        FOREACH (_ IN CASE WHEN $rating IS NULL THEN [] ELSE [1] END | SET r.rating = $rating)
-        """,
-        {"consumer_id": consumer_id, "snack_id": snack_id, "purchase_date": purchase_date, "rating": rating},
-        write=True,
-    )
-
-
-def graph_neighborhood(consumer_id: str, limit: int = 40) -> list[dict[str, Any]]:
-    return query(
-        """
-        MATCH (u:Consumer {consumer_id:$consumer_id})
-        OPTIONAL MATCH p=(u)-[:FRIEND_OF|BOUGHT|INTERESTED_IN*1..2]-(x)
-        WITH u, collect(p)[0..$limit] AS paths
-        UNWIND paths AS p
-        UNWIND relationships(p) AS r
-        WITH DISTINCT startNode(r) AS src, r, endNode(r) AS tgt
-        RETURN elementId(src) AS source_id, labels(src)[0] AS source_label,
-               coalesce(src.name, src.title, src.consumer_id, src.snack_id) AS source_name,
-               type(r) AS relationship,
-               elementId(tgt) AS target_id, labels(tgt)[0] AS target_label,
-               coalesce(tgt.name, tgt.title, tgt.consumer_id, tgt.snack_id) AS target_name
-        LIMIT $limit
-        """,
-        {"consumer_id": consumer_id, "limit": int(limit)},
-    )
-def add_new_snack(snack_id: str, title: str, image_url: str, brand_name: str, categories: list[str]) -> None:
-    # 1. สร้างโหนด Snack ใหม่ 
-    query(
-        "MERGE (s:Snack {snack_id: $snack_id}) SET s.title = $title, s.image_url = $image_url",
-        {"snack_id": snack_id, "title": title, "image_url": image_url},
-        write=True
-    )
-    
-    # 2. เชื่อมความสัมพันธ์กับ Brand (ถ้ามีการกรอกชื่อแบรนด์)
-    if brand_name.strip():
-        query(
-            """
-            MATCH (s:Snack {snack_id: $snack_id})
-            MERGE (b:Brand {name: $brand_name})
-            ON CREATE SET b.brand_id = 'BR_' + $snack_id
-            MERGE (b)-[:PRODUCED]->(s)
-            """,
-            {"snack_id": snack_id, "brand_name": brand_name.strip()},
-            write=True
+def require_connection() -> None:
+    try:
+        if not ping():
+            raise RuntimeError("Neo4j did not return a healthy response")
+    except Exception as exc:
+        st.error("ยังเชื่อมต่อ Neo4j Aura ไม่สำเร็จ")
+        st.code(
+            '[neo4j]\nuri = "neo4j+s://YOUR_INSTANCE.databases.neo4j.io"\n'
+            'username = "neo4j"\npassword = "YOUR_PASSWORD"\ndatabase = "neo4j"',
+            language="toml",
         )
+        st.caption("ให้นำค่าด้านบนไปใส่ใน Streamlit Secrets และห้าม commit password ลง GitHub")
+        st.exception(exc)
+        st.stop()
+
+
+def consumer_selector(key: str = "consumer") -> str:
+    consumers = get_consumers()
+    if not consumers:
+        st.info("ยังไม่มีข้อมูลผู้บริโภค กรุณาไปหน้า Admin / Setup แล้วสร้างข้อมูลตัวอย่าง")
+        st.stop()
+    labels = {f"{x['consumer_id']} — {x['name']}": x["consumer_id"] for x in consumers}
+    chosen = st.selectbox("เลือกผู้ใช้", list(labels), key=key)
+    return labels[chosen]
+
+
+def explain_reason(row: dict) -> str:
+    parts = []
+    if row.get("friend_count", 0):
+        friends = ", ".join(row.get("friend_names") or [])
+        parts.append(f"เพื่อน {row['friend_count']} คนเคยซื้อ" + (f" ({friends})" if friends else ""))
+    if row.get("interest_matches", 0):
+        cats = ", ".join(row.get("matched_categories") or [])
+        parts.append(f"ตรงกับความสนใจ {row['interest_matches']} หมวด" + (f" ({cats})" if cats else ""))
+    if row.get("popularity", 0):
+        parts.append(f"ถูกซื้อแล้ว {row['popularity']} ครั้ง")
+    if row.get("avg_rating", 0):
+        parts.append(f"คะแนนเฉลี่ย {row['avg_rating']:.2f}/5")
+    return " • ".join(parts) or "แนะนำจากข้อมูลพฤติกรรมโดยรวม"
+
+
+require_connection()
+
+with st.sidebar:
         
-    # 3. เชื่อมความสัมพันธ์กับ Categories
-    if categories:
-        query(
-            """
-            MATCH (s:Snack {snack_id: $snack_id})
-            UNWIND $categories AS cat_name
-            MERGE (c:Category {name: cat_name})
-            MERGE (s)-[:IN_CATEGORY]->(c)
+    st.markdown("## 🍿 GraphSnack By Pakkarpon")
+    st.caption("Neo4j Aura + Streamlit")
+    
+    page = st.radio(
+        "เมนู",
+        ["Dashboard", "Recommendations", "Snack Search", "Add Snack", "Purchase / Rate", "Graph Explorer", "Admin / Setup"],
+    )
+    st.divider()
+    st.caption("Graph Database Recommendation System")
+
+
+st.markdown(
+    """
+    <div class="hero">
+      <h1>🍿 GraphSnack Recommendation System</h1>
+      <p>ระบบแนะนำขนมด้วย Graph Database ที่อธิบายเหตุผลของคำแนะนำได้พร้อมภาพประกอบ</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+if page == "Dashboard":
+    st.subheader("ภาพรวมระบบ")
+    m = get_dashboard_metrics()
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Consumers", m.get("consumers", 0))
+    c2.metric("Snacks", m.get("snacks", 0))
+    c3.metric("Purchase relationships", m.get("purchases", 0))
+    c4.metric("Friend relationships", m.get("friendships", 0))
+
+    st.divider()
+    consumer_id = consumer_selector("dash_consumer")
+    profile = get_profile(consumer_id)
+    
+    if profile:
+        left, right = st.columns([1, 2])
+        with left:
+            st.markdown(f"### {profile['name']}")
+            st.write(f"**รหัส:** {profile['consumer_id']}")
+            st.write("**ความสนใจ:** " + (", ".join(profile["interests"]) or "ยังไม่มี"))
+        with right:
+            st.markdown("### ประวัติการซื้อขนม")
+            if profile.get("purchased"):
+                st.dataframe(pd.DataFrame(profile["purchased"]), use_container_width=True, hide_index=True)
+            else:
+                st.info("ยังไม่มีประวัติการซื้อ")
+
+elif page == "Recommendations":
+    st.subheader("✨ ขนมที่แนะนำ")
+    consumer_id = consumer_selector("rec_consumer")
+    top_n = st.slider("จำนวนคำแนะนำ", 3, 12, 6)
+    rows = recommend_snacks(consumer_id, top_n)
+
+    st.caption("คะแนนตัวอย่าง = เพื่อน × 3 + หมวดความสนใจ × 2 + ความนิยม × 0.20 + rating เฉลี่ย × 0.50")
+    if not rows:
+        st.info("ยังไม่มีคำแนะนำสำหรับผู้ใช้นี้")
+    
+    for i, row in enumerate(rows, start=1):
+        brands = ", ".join(row.get("brands") or []) or "ไม่ระบุแบรนด์"
+        categories = ", ".join(row.get("categories") or []) or "ไม่ระบุหมวด"
+        
+        # จัดการอ่านไฟล์รูปภาพจากเครื่อง
+        img_path = row.get("image_url", "")
+        img_src = "https://via.placeholder.com/150?text=No+Image"
+        
+        if img_path and os.path.exists(img_path):
+            with open(img_path, "rb") as img_file:
+                b64_string = base64.b64encode(img_file.read()).decode()
+                img_src = f"data:image/jpeg;base64,{b64_string}"
+        
+        st.markdown(
+            f"""
+            <div class="snack-card">
+              <img src="{img_src}" class="snack-image" alt="{row['title']}">
+              <div>
+                  <span class="score-pill">#{i} · score {row['score']:.2f}</span>
+                  <h3 style="margin:.55rem 0 .2rem 0">{row['title']}</h3>
+                  <div class="muted">{row['snack_id']} · {brands} · {categories}</div>
+                  <p style="margin-top:0.5rem;"><b>เหตุผล:</b> {explain_reason(row)}</p>
+              </div>
+            </div>
             """,
-            {"snack_id": snack_id, "categories": categories},
-            write=True
+            unsafe_allow_html=True,
         )
+
+# ----------------- หน้า Snack Search (เอาหมวดหมู่ออกทั้งตัวเลือกและคอลัมน์) -----------------
+elif page == "Snack Search":
+    st.subheader("🔎 ค้นหาขนม")
+    keyword = st.text_input("ชื่อขนมหรือแบรนด์", placeholder="เช่น Chocolate, Gummy Bears, Chips")
+    rows = search_snacks(keyword, "")
+    
+    st.write(f"พบ {len(rows)} รายการ")
+    
+    df = pd.DataFrame(rows)
+    if "categories" in df.columns:
+        df = df.drop(columns=["categories"])
+        
+    st.dataframe(df, use_container_width=True, hide_index=True)
+
+# ----------------- หน้า Add Snack (เอาช่องเลือกหมวดหมู่ออก) -----------------
+elif page == "Add Snack":
+    st.subheader("➕ เพิ่มข้อมูลขนมใหม่")
+    
+    with st.form("add_snack_form", clear_on_submit=True):
+        c1, c2 = st.columns(2)
+        snack_id = c1.text_input("รหัสขนม (Snack ID) *", placeholder="เช่น SNA111")
+        title = c2.text_input("ชื่อขนม (Title) *", placeholder="เช่น Choco Pie")
+        
+        image_url = st.text_input("ที่อยู่รูปภาพ (Image Path)", placeholder="เช่น images/Chocopie.jpg")
+        brand_name = st.text_input("ชื่อแบรนด์ (Brand)", placeholder="เช่น Lotte")
+        
+        submitted = st.form_submit_button("บันทึกข้อมูลลงระบบ", type="primary", use_container_width=True)
+        
+        if submitted:
+            if not snack_id.strip() or not title.strip():
+                st.error("⚠️ กรุณากรอก 'รหัสขนม' และ 'ชื่อขนม' ให้ครบถ้วน")
+            else:
+                add_new_snack(snack_id, title, image_url, brand_name, [])
+                st.success(f"✅ บันทึกขนม '{title}' ลงระบบเรียบร้อยแล้ว!")
+# -----------------------------------------------------------------------------
+
+elif page == "Purchase / Rate":
+    st.subheader("📝 บันทึกการซื้อและให้คะแนน")
+    consumer_id = consumer_selector("purchase_consumer")
+    snacks = search_snacks("", "")
+    if not snacks:
+        st.info("ยังไม่มีขนมในระบบ")
+        st.stop()
+    snack_labels = {f"{s['snack_id']} — {s['title']}": s["snack_id"] for s in snacks}
+    selected = st.selectbox("ขนม", list(snack_labels))
+    purchase_date = st.date_input("วันที่ซื้อ", value=date.today())
+    use_rating = st.checkbox("ให้คะแนนพร้อมกัน")
+    rating = st.slider("คะแนน", 1.0, 5.0, 4.0, 0.5, disabled=not use_rating)
+    if st.button("บันทึก", type="primary", use_container_width=True):
+        record_purchase(consumer_id, snack_labels[selected], purchase_date.isoformat(), rating if use_rating else None)
+        st.success("บันทึกความสัมพันธ์ BOUGHT แล้ว")
+
+elif page == "Graph Explorer":
+    st.subheader("🕸️ Graph Explorer")
+    consumer_id = consumer_selector("graph_consumer")
+    rows = graph_neighborhood(consumer_id)
+    if not rows:
+        st.info("ยังไม่มี neighborhood graph")
+    else:
+        dot = ["digraph G {", 'rankdir="LR";', 'node [shape=box, style="rounded,filled", fillcolor="#f8fafc"];']
+        seen_nodes = set()
+        for r in rows:
+            for nid, label, name in [
+                (r["source_id"], r["source_label"], r["source_name"]),
+                (r["target_id"], r["target_label"], r["target_name"]),
+            ]:
+                if nid not in seen_nodes:
+                    safe_name = str(name).replace('"', "'")
+                    dot.append(f'"{nid}" [label="{safe_name}\\n:{label}"];')
+                    seen_nodes.add(nid)
+            dot.append(f'"{r["source_id"]}" -> "{r["target_id"]}" [label="{r["relationship"]}"];')
+        dot.append("}")
+        st.graphviz_chart("\n".join(dot), use_container_width=True)
+        with st.expander("ดูข้อมูล edge ที่ใช้วาดกราฟ"):
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+elif page == "Admin / Setup":
+    st.subheader("⚙️ Setup ข้อมูลตัวอย่าง")
+    st.warning("ปุ่มนี้ไม่ลบข้อมูลเดิม และใช้ MERGE จึงสามารถกดซ้ำได้")
+    st.markdown(
+        """
+        **Graph schema ใหม่สำหรับระบบแนะนำขนม**
+        - `(:Consumer)-[:FRIEND_OF]-(:Consumer)`
+        - `(:Consumer)-[:BOUGHT {purchase_date, rating}]->(:Snack)`
+        - `(:Consumer)-[:INTERESTED_IN]->(:Category)`
+        - `(:Snack)-[:IN_CATEGORY]->(:Category)`
+        - `(:Brand)-[:PRODUCED]->(:Snack)`
+        """
+    )
+    if st.button("สร้าง Constraint + Demo Data", type="primary", use_container_width=True):
+        with st.spinner("กำลังสร้างข้อมูล..."):
+            seed_demo_data()
+        st.success("สร้างข้อมูลตัวอย่างเรียบร้อยแล้ว")
+        st.rerun()
