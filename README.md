@@ -8,8 +8,8 @@ Streamlit URL: https://22apezkshfcnklimdursax.streamlit.app/
 
 | งาน | การบ้าน | ไฟล์/เว็บไซต์ | Colab |
 | --- | --- | --- | --- |
-| 01 | แบบฝึกหัด Graph Analysis (Neo4jDBOnline) | — | [เปิด Colab](https://colab.research.google.com/drive/1sAQqauHYCRtjK1jVGrsGJD0Wky-hiM8B?authuser=2&usp=drive_open) |
-| 02 | ระบบแนะนำเบื้องต้น (DessertRecommender) | — | [เปิด Colab](https://colab.research.google.com/drive/1psVQlujQ0JD0iQekz-8qHTas4n-Dp3Vz?authuser=2&usp=drive_open) |
+| 01 | ระบบแนะนำเบื้องต้น (DessertRecommender) | — | [เปิด Colab](https://colab.research.google.com/drive/1psVQIujQ0JD0iQekz-8qHTas4n-Dp3Vz?usp=sharing_open) |
+| 02 | แบบฝึกหัด Graph Analysis (Neo4jDBOnline) | — | [เปิด Colab](https://colab.research.google.com/drive/1sAQqauHYCRtjK1jVGrsGJd0Wky-hiM8B?usp=sharing_open) |
 | 03 | Web Application ระบบแนะนำขนม (GraphSnack) | [เข้าสู่เว็บไซต์](https://22apezkshfcnklimdursax.streamlit.app/) | — | 
 | 04 | ตอบคำถามแบบฝึกหัด  | [เปิด Canva](https://canva.link/nok1viq7c02b7vv) | — | 
 | 05 | Slide Presentation (GraphSnack) | [เปิด Canva](https://canva.link/ybigmgpg3xsykij) | — |
