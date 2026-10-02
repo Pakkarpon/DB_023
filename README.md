@@ -1,5 +1,15 @@
-# รวมการบ้าน — 664245023
 
+# 🍿 GraphSnack Recommendation System (ระบบแนะนำขนม)
+
+> ระบบแนะนำขนมอัจฉริยะด้วย Neo4j Graph Database - ค้นหาและแนะนำขนมจากความสนใจและพฤติกรรมของผู้ใช้
+
+![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red?logo=streamlit&logoColor=white)
+![Neo4j](https://img.shields.io/badge/Neo4j-5.0+-brightgreen?logo=neo4j&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-brightgreen)
+![GitHub](https://img.shields.io/badge/GitHub-Pakkarpon-black?logo=github&logoColor=white)
+
+# รวมการบ้าน — 664245023
 Streamlit URL: https://22apezkshfcnklimdursax.streamlit.app/
 
 รวมการบ้าน พร้อมไฟล์ประกอบโปรเจกต์ระบบแนะนำขนม (GraphSnack Recommendation System)
@@ -15,11 +25,6 @@ Streamlit URL: https://22apezkshfcnklimdursax.streamlit.app/
 | 05 | Slide Presentation (GraphSnack) | [เปิด Canva](https://canva.link/ybigmgpg3xsykij) | — |
 
 ---
-
-# 🍿 GraphSnack Recommendation System (ระบบแนะนำขนม)
-
-โปรเจกต์ระบบแนะนำขนมด้วย Graph Database 
-พัฒนาด้วย **Streamlit + Neo4j Aura + Cypher** และออกแบบให้ deploy ผ่าน **GitHub → Streamlit Community Cloud** ได้โดยตรง
 
 ## 1. แนวคิดของระบบ
 
