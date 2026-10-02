@@ -102,9 +102,6 @@ def explain_reason(row: dict) -> str:
 require_connection()
 
 with st.sidebar:
-    profile_img = "images/Pakkarpon.jpg"
-    if os.path.exists(profile_img):
-        st.image(profile_img, use_container_width=True)
         
     st.markdown("## 🍿 GraphSnack By Pakkarpon")
     st.caption("Neo4j Aura + Streamlit")
@@ -192,17 +189,21 @@ elif page == "Recommendations":
             unsafe_allow_html=True,
         )
 
+# ----------------- หน้า Snack Search (เอาหมวดหมู่ออกทั้งตัวเลือกและคอลัมน์) -----------------
 elif page == "Snack Search":
     st.subheader("🔎 ค้นหาขนม")
-    c1, c2 = st.columns([2, 1])
-    keyword = c1.text_input("ชื่อขนมหรือแบรนด์", placeholder="เช่น Chocolate, Gummy Bears, Chips")
-    categories = [""] + list_categories()
-    category = c2.selectbox("หมวดหมู่", categories, format_func=lambda x: "ทุกหมวด" if x == "" else x)
-    rows = search_snacks(keyword, category)
+    keyword = st.text_input("ชื่อขนมหรือแบรนด์", placeholder="เช่น Chocolate, Gummy Bears, Chips")
+    rows = search_snacks(keyword, "")
+    
     st.write(f"พบ {len(rows)} รายการ")
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    
+    df = pd.DataFrame(rows)
+    if "categories" in df.columns:
+        df = df.drop(columns=["categories"])
+        
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
-# ----------------- เพิ่มเมนู Add Snack ตรงนี้ -----------------
+# ----------------- หน้า Add Snack (เอาช่องเลือกหมวดหมู่ออก) -----------------
 elif page == "Add Snack":
     st.subheader("➕ เพิ่มข้อมูลขนมใหม่")
     
@@ -214,23 +215,15 @@ elif page == "Add Snack":
         image_url = st.text_input("ที่อยู่รูปภาพ (Image Path)", placeholder="เช่น images/Chocopie.jpg")
         brand_name = st.text_input("ชื่อแบรนด์ (Brand)", placeholder="เช่น Lotte")
         
-        existing_categories = list_categories()
-        selected_cats = st.multiselect("เลือกหมวดหมู่ (Categories)", existing_categories)
-        new_cat = st.text_input("สร้างหมวดหมู่ใหม่ (คั่นด้วยลูกน้ำ ,)", placeholder="เช่น Soft, Bakery")
-        
         submitted = st.form_submit_button("บันทึกข้อมูลลงระบบ", type="primary", use_container_width=True)
         
         if submitted:
             if not snack_id.strip() or not title.strip():
                 st.error("⚠️ กรุณากรอก 'รหัสขนม' และ 'ชื่อขนม' ให้ครบถ้วน")
             else:
-                final_cats = list(selected_cats)
-                if new_cat.strip():
-                    final_cats.extend([x.strip() for x in new_cat.split(",") if x.strip()])
-                
-                add_new_snack(snack_id, title, image_url, brand_name, final_cats)
+                add_new_snack(snack_id, title, image_url, brand_name, [])
                 st.success(f"✅ บันทึกขนม '{title}' ลงระบบเรียบร้อยแล้ว!")
-# -----------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 elif page == "Purchase / Rate":
     st.subheader("📝 บันทึกการซื้อและให้คะแนน")
