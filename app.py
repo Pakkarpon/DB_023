@@ -189,15 +189,21 @@ elif page == "Recommendations":
             unsafe_allow_html=True,
         )
 
-# ----------------- แก้ไขหน้า Snack Search (ตัดตัวเลือกหมวดหมู่ออก) -----------------
+# ----------------- หน้า Snack Search (เอาหมวดหมู่ออกทั้งตัวเลือกและคอลัมน์) -----------------
 elif page == "Snack Search":
     st.subheader("🔎 ค้นหาขนม")
     keyword = st.text_input("ชื่อขนมหรือแบรนด์", placeholder="เช่น Chocolate, Gummy Bears, Chips")
     rows = search_snacks(keyword, "")
+    
     st.write(f"พบ {len(rows)} รายการ")
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    
+    df = pd.DataFrame(rows)
+    if "categories" in df.columns:
+        df = df.drop(columns=["categories"])
+        
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
-# ----------------- แก้ไขหน้า Add Snack (ตัดฟิลด์หมวดหมู่ออก) -----------------
+# ----------------- หน้า Add Snack (เอาช่องเลือกหมวดหมู่ออก) -----------------
 elif page == "Add Snack":
     st.subheader("➕ เพิ่มข้อมูลขนมใหม่")
     
